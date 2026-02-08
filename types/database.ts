@@ -4,7 +4,8 @@ export interface Product {
     slug: string
     description: string | null
     price: number
-    category_id: string | null
+    category_id: string
+    subcategory: string | null
     images: string[]
     sizes: string[]
     colors: string[]
@@ -12,6 +13,7 @@ export interface Product {
     is_active: boolean
     featured: boolean
     created_at: string
+    updated_at?: string
     category?: Category
   }
   
