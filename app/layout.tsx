@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Femi9outfit - Quality Clothing in Pakistan",
-  description: "Shop the latest trends in women's, men's, and kids' fashion. Free shipping on orders above Rs.5999",
+  title: "Femi9outfit - Quality Clothing in Pakistan | Online Shopping",
+  description: "Shop the latest trends in women's, men's, and kids' fashion. Free shipping on orders above Rs.5999. Cash on Delivery available.",
 };
 
 export default function RootLayout({
