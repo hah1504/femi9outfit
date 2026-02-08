@@ -41,9 +41,9 @@ export function Footer() {
           <div>
             <h3 className="text-white text-lg font-semibold mb-4">Contact Us</h3>
             <ul className="space-y-2 text-sm">
-              <li>Email: info@femi9outfit.com</li>
-              <li>Phone: +92 308 1234243</li>
-              <li>WhatsApp: +92 308 1234243</li>
+              <li>Email: minhaj_khan@hotmail.com</li>
+              <li>Phone: +92 333 3524209</li>
+              <li>WhatsApp: +92 333 3524209</li>
             </ul>
             <div className="flex space-x-4 mt-4">
               <a href="#" className="hover:text-white"><Facebook size={20} /></a>

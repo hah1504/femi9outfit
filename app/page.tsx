@@ -1,193 +1,260 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { ProductCard } from '@/components/products/product-card'
-import type { Product } from '@/types/database'
+import { Star } from 'lucide-react'
+import { getProducts, getFeaturedProducts, getProductsByCategory } from '@/lib/supabase/queries'
 
-// Mock data - will be replaced with real Supabase data
-const featuredProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Elegant Summer Dress',
-    slug: 'elegant-summer-dress',
-    description: 'Beautiful floral summer dress',
-    price: 3499,
-    category_id: 'women',
-    images: ['https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400'],
-    colors: ['Blue', 'Pink', 'White'],
-    sizes: ['S', 'M', 'L', 'XL'],
-    stock: 15,
-    is_active: true,
-    featured: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    name: 'Classic Denim Jacket',
-    slug: 'classic-denim-jacket',
-    description: 'Timeless denim jacket for all seasons',
-    price: 4999,
-    category_id: 'women',
-    images: ['https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400'],
-    colors: ['Blue', 'Black'],
-    sizes: ['S', 'M', 'L', 'XL'],
-    stock: 10,
-    is_active: true,
-    featured: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    name: 'Cotton T-Shirt',
-    slug: 'cotton-t-shirt',
-    description: 'Comfortable cotton t-shirt',
-    price: 1299,
-    category_id: 'men',
-    images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400'],
-    colors: ['White', 'Black', 'Gray'],
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    stock: 25,
-    is_active: true,
-    featured: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    name: 'Kids Playful Hoodie',
-    slug: 'kids-playful-hoodie',
-    description: 'Warm and colorful hoodie for kids',
-    price: 2199,
-    category_id: 'kids',
-    images: ['https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=400'],
-    colors: ['Red', 'Blue', 'Green'],
-    sizes: ['4Y', '6Y', '8Y', '10Y'],
-    stock: 20,
-    is_active: true,
-    featured: true,
-    created_at: new Date().toISOString(),
-  },
-]
+// Fetch data from Supabase
+// Fetch data from Supabase
 
-export default function Home() {
+export default async function Home() {
+  // Fetch products from Supabase
+  const newArrivalProducts = await getFeaturedProducts(5)
+  const winterCollection = await getProductsByCategory('women', 8).then(products => 
+    products.filter(p => ['marina', 'velvet', 'khaddar'].includes(p.subcategory || ''))
+  )
+  const partyWearProducts = await getProductsByCategory('party', 4)
+
+  // Show message if no products found
+  const hasProducts = newArrivalProducts.length > 0 || winterCollection.length > 0 || partyWearProducts.length > 0
+
+  if (!hasProducts) {
+    return (
+      <main className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-8 mb-8">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">⚠️ Database Not Set Up Yet</h1>
+              <p className="text-lg text-gray-700 mb-6">
+                Your Supabase database needs to be initialized with the schema.
+              </p>
+              
+              <div className="bg-white rounded-lg p-6 text-left max-w-2xl mx-auto">
+                <h2 className="text-xl font-bold mb-4">Quick Setup (5 minutes):</h2>
+                <ol className="space-y-3 text-gray-700">
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">1.</span>
+                    <span>Go to: <a href="https://kxvtjoeipzsgfonvntxf.supabase.co" target="_blank" className="text-blue-600 underline">Supabase Dashboard</a></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">2.</span>
+                    <span>Click <strong>SQL Editor</strong> → <strong>New Query</strong></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">3.</span>
+                    <span>Open file: <code className="bg-gray-100 px-2 py-1 rounded">supabase/schema.sql</code></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">4.</span>
+                    <span>Copy all SQL code and paste into SQL Editor</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">5.</span>
+                    <span>Click <strong>RUN</strong></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="font-bold text-rose-600">6.</span>
+                    <span>Refresh this page</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded">
+                <p className="text-sm text-green-800">
+                  ✅ This will create all tables and add 12 sample products automatically!
+                </p>
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-600">
+              <p>Need help? Check the file: <code className="bg-gray-100 px-2 py-1 rounded">SUPABASE_SETUP.md</code></p>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <section className="relative h-[500px] md:h-[600px] bg-gradient-to-r from-rose-100 to-pink-100">
-        <div className="container mx-auto px-4 h-full flex items-center">
-          <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-4">
-              New Season Collection
-            </h1>
-            <p className="text-xl text-gray-700 mb-8">
-              Discover the latest trends in fashion. Free shipping on orders above Rs.5999
-            </p>
-            <Link 
-              href="/products"
-              className="inline-block bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
-            >
-              Shop Now
-            </Link>
-          </div>
+      {/* Hero Banner with Categories */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Winter */}
+          <Link href="/products?season=winter" className="group relative h-64 md:h-80 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+            <Image
+              src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600"
+              alt="Winter Collection"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Winter</h3>
+              <button className="bg-white text-rose-600 px-4 py-2 rounded font-semibold text-sm hover:bg-rose-600 hover:text-white transition">
+                SHOP NOW
+              </button>
+            </div>
+          </Link>
+
+          {/* Summer */}
+          <Link href="/products?season=summer" className="group relative h-64 md:h-80 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+            <Image
+              src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600"
+              alt="Summer Collection"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Summer</h3>
+              <button className="bg-white text-rose-600 px-4 py-2 rounded font-semibold text-sm hover:bg-rose-600 hover:text-white transition">
+                SHOP NOW
+              </button>
+            </div>
+          </Link>
+
+          {/* Bedsheets */}
+          <Link href="/products?category=bedding" className="group relative h-64 md:h-80 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+            <Image
+              src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600"
+              alt="Bedsheets"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Bedsheets</h3>
+              <button className="bg-white text-rose-600 px-4 py-2 rounded font-semibold text-sm hover:bg-rose-600 hover:text-white transition">
+                Shop Now
+              </button>
+            </div>
+          </Link>
+
+          {/* Embroidered Shawls */}
+          <Link href="/products?category=shawls" className="group relative h-64 md:h-80 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10" />
+            <Image
+              src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600"
+              alt="Embroidered Shawls"
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-4">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">embroidered shawls</h3>
+              <button className="bg-white text-rose-600 px-4 py-2 rounded font-semibold text-sm hover:bg-rose-600 hover:text-white transition">
+                Shop Now
+              </button>
+            </div>
+          </Link>
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-16 bg-gray-50">
+      {/* NEW IN Section */}
+      <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Shop by Category</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Women */}
-            <Link href="/products?category=women" className="group relative h-80 rounded-lg overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-              <Image
-                src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600"
-                alt="Women's Fashion"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 z-20 flex items-end p-6">
-                <h3 className="text-3xl font-bold text-white">Women</h3>
-              </div>
-            </Link>
-
-            {/* Men */}
-            <Link href="/products?category=men" className="group relative h-80 rounded-lg overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-              <Image
-                src="https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=600"
-                alt="Men's Fashion"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 z-20 flex items-end p-6">
-                <h3 className="text-3xl font-bold text-white">Men</h3>
-              </div>
-            </Link>
-
-            {/* Kids */}
-            <Link href="/products?category=kids" className="group relative h-80 rounded-lg overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-              <Image
-                src="https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600"
-                alt="Kids Fashion"
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 z-20 flex items-end p-6">
-                <h3 className="text-3xl font-bold text-white">Kids</h3>
-              </div>
-            </Link>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">NEW IN</h2>
           </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold">Featured Products</h2>
-            <Link href="/products" className="text-rose-600 hover:text-rose-700 font-semibold">
-              View All
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {newArrivalProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Winter Collection Section */}
+      <section className="py-12 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Winter</h2>
+            <Link href="/products?season=winter" className="text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1">
+              View All →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {winterCollection.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Party Wear Section */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">PARTY WEAR</h2>
+            <Link href="/products?category=party" className="text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1">
+              View All →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+            {partyWearProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Customer Reviews Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                </svg>
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Free Shipping</h3>
-              <p className="text-gray-600">On orders above Rs.5999</p>
             </div>
-            <div>
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Let customers speak for us</h2>
+            <p className="text-gray-600 text-lg">from 2207 reviews</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {/* Review 1 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex gap-1 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Quality Assured</h3>
-              <p className="text-gray-600">Premium quality products</p>
+              <h3 className="font-semibold mb-2">2 pc marina winter collection</h3>
+              <p className="text-gray-600 text-sm mb-3">I ordered from femi9outfit every time... This is my first order of winter dress and I'm very satisfied with the quality...</p>
+              <p className="text-sm text-gray-500">- Shumail Ayub</p>
             </div>
-            <div>
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                </svg>
+
+            {/* Review 2 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex gap-1 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
               </div>
-              <h3 className="text-xl font-semibold mb-2">Easy Returns</h3>
-              <p className="text-gray-600">7 days return policy</p>
+              <h3 className="font-semibold mb-2">Best fabric best quality</h3>
+              <p className="text-gray-600 text-sm mb-3">Super quality fabric ....embroidery is so elegant thanks i like it</p>
+              <p className="text-sm text-gray-500">- Z.S.</p>
             </div>
+
+            {/* Review 3 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <div className="flex gap-1 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <h3 className="font-semibold mb-2">Excellent service</h3>
+              <p className="text-gray-600 text-sm mb-3">Very nice. Excellent service. Keep it up. Definitely order again ❤️</p>
+              <p className="text-sm text-gray-500">- Samra Adnan</p>
+            </div>
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/reviews" className="inline-block bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition">
+              View All Reviews
+            </Link>
           </div>
         </div>
       </section>
