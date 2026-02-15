@@ -10,7 +10,7 @@ import { isCurrentUserAdmin, signOutAdminSession } from '@/lib/supabase/admin'
 export default function AdminLoginPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    email: '',
+    adminId: '',
     password: '',
   })
   const [error, setError] = useState('')
@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
-      await signIn(formData.email, formData.password)
+      await signIn(formData.adminId, formData.password)
       const { isAdmin } = await isCurrentUserAdmin()
 
       if (!isAdmin) {
@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
 
       router.push('/admin/dashboard')
     } catch {
-      setError('Invalid email or password.')
+      setError('Invalid ID or password.')
     } finally {
       setLoading(false)
     }
@@ -61,16 +61,16 @@ export default function AdminLoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">ID</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={formData.adminId}
+                  onChange={(e) => setFormData({ ...formData, adminId: e.target.value })}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-600 focus:border-transparent"
-                  placeholder="admin@femi9outfit.com"
+                  placeholder="Enter your admin ID"
                 />
               </div>
             </div>
@@ -98,13 +98,6 @@ export default function AdminLoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm font-semibold text-blue-900 mb-2">Admin Access</p>
-            <p className="text-xs text-blue-800">
-              Sign in with a Supabase user that has role <strong>admin</strong> in <code>public.user_roles</code>.
-            </p>
-          </div>
         </div>
 
         <div className="mt-6 text-center">
