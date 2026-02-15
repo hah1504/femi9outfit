@@ -15,6 +15,7 @@ import {
   Phone
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { isCurrentUserAdmin, signOutAdminSession } from '@/lib/supabase/admin'
 
 interface Customer {
   customer_name: string
@@ -33,14 +34,17 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('adminAuth')
-    if (!isAdmin) {
-      router.push('/admin')
-      return
+    const checkAdminAndLoad = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      if (!isAdmin) {
+        router.push('/admin')
+        return
+      }
+      fetchCustomers()
     }
 
-    fetchCustomers()
-  }, [])
+    checkAdminAndLoad()
+  }, [router])
 
   useEffect(() => {
     if (searchTerm) {
@@ -100,8 +104,8 @@ export default function AdminCustomersPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth')
+  const handleLogout = async () => {
+    await signOutAdminSession()
     router.push('/admin')
   }
 

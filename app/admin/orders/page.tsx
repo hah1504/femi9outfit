@@ -17,6 +17,7 @@ import {
   Clock
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { isCurrentUserAdmin, signOutAdminSession } from '@/lib/supabase/admin'
 
 interface Order {
   id: string
@@ -43,14 +44,17 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('adminAuth')
-    if (!isAdmin) {
-      router.push('/admin')
-      return
+    const checkAdminAndLoad = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      if (!isAdmin) {
+        router.push('/admin')
+        return
+      }
+      fetchOrders()
     }
 
-    fetchOrders()
-  }, [])
+    checkAdminAndLoad()
+  }, [router])
 
   useEffect(() => {
     let filtered = orders
@@ -108,8 +112,8 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth')
+  const handleLogout = async () => {
+    await signOutAdminSession()
     router.push('/admin')
   }
 

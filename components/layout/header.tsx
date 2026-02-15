@@ -85,7 +85,7 @@ export function Header() {
               Party Wear
             </Link>
             <Link href="/products?category=men" className="hover:text-rose-600 transition font-medium">
-              Men's Collection
+              Men&apos;s Collection
             </Link>
           </nav>
 

@@ -4,32 +4,33 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User, Package, MapPin, Settings, LogOut, Heart } from 'lucide-react'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { getCurrentUser, signOut } from '@/lib/supabase/auth'
 
 export default function ProfilePage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('orders')
 
   useEffect(() => {
-    checkUser()
-  }, [])
-
-  const checkUser = async () => {
-    try {
-      const currentUser = await getCurrentUser()
-      if (!currentUser) {
+    const run = async () => {
+      try {
+        const currentUser = await getCurrentUser()
+        if (!currentUser) {
+          router.push('/account')
+          return
+        }
+        setUser(currentUser)
+      } catch {
         router.push('/account')
-        return
+      } finally {
+        setLoading(false)
       }
-      setUser(currentUser)
-    } catch (error) {
-      router.push('/account')
-    } finally {
-      setLoading(false)
     }
-  }
+
+    run()
+  }, [router])
 
   const handleSignOut = async () => {
     try {

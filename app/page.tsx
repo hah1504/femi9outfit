@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ProductCard } from '@/components/products/product-card'
 import { Star } from 'lucide-react'
-import { getProducts, getFeaturedProducts, getProductsByCategory } from '@/lib/supabase/queries'
+import { getFeaturedProducts, getProductsByCategory } from '@/lib/supabase/queries'
 
 // Fetch data from Supabase
 // Fetch data from Supabase
@@ -222,7 +222,7 @@ export default async function Home() {
                 ))}
               </div>
               <h3 className="font-semibold mb-2">2 pc marina winter collection</h3>
-              <p className="text-gray-600 text-sm mb-3">I ordered from femi9outfit every time... This is my first order of winter dress and I'm very satisfied with the quality...</p>
+              <p className="text-gray-600 text-sm mb-3">I ordered from femi9outfit every time... This is my first order of winter dress and I&apos;m very satisfied with the quality...</p>
               <p className="text-sm text-gray-500">- Shumail Ayub</p>
             </div>
 

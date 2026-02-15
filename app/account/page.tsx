@@ -57,8 +57,9 @@ export default function AccountPage() {
         setIsLogin(true)
         setFormData({ fullName: '', email: '', password: '', confirmPassword: '' })
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred. Please try again.')
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred. Please try again.'
+      setError(message)
     } finally {
       setIsLoading(false)
     }

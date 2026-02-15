@@ -8,14 +8,22 @@ import {
   Package, 
   ShoppingCart, 
   Users, 
-  Settings, 
   LogOut,
-  TrendingUp,
   DollarSign,
   ShoppingBag,
   Eye
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { isCurrentUserAdmin, signOutAdminSession } from '@/lib/supabase/admin'
+
+interface DashboardOrder {
+  id: string
+  customer_name: string
+  total_amount: number
+  status: string
+  created_at: string
+  customer_phone: string
+}
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -25,19 +33,21 @@ export default function AdminDashboard() {
     totalProducts: 0,
     totalCustomers: 0,
   })
-  const [recentOrders, setRecentOrders] = useState<any[]>([])
+  const [recentOrders, setRecentOrders] = useState<DashboardOrder[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check admin authentication
-    const isAdmin = localStorage.getItem('adminAuth')
-    if (!isAdmin) {
-      router.push('/admin')
-      return
+    const checkAdminAndLoad = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      if (!isAdmin) {
+        router.push('/admin')
+        return
+      }
+      fetchDashboardData()
     }
 
-    fetchDashboardData()
-  }, [])
+    checkAdminAndLoad()
+  }, [router])
 
   const fetchDashboardData = async () => {
     try {
@@ -72,8 +82,8 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth')
+  const handleLogout = async () => {
+    await signOutAdminSession()
     router.push('/admin')
   }
 

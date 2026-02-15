@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/types/database'
+import { isCurrentUserAdmin, signOutAdminSession } from '@/lib/supabase/admin'
 
 export default function AdminProductsPage() {
   const router = useRouter()
@@ -28,14 +29,17 @@ export default function AdminProductsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
-    const isAdmin = localStorage.getItem('adminAuth')
-    if (!isAdmin) {
-      router.push('/admin')
-      return
+    const checkAdminAndLoad = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      if (!isAdmin) {
+        router.push('/admin')
+        return
+      }
+      fetchProducts()
     }
 
-    fetchProducts()
-  }, [])
+    checkAdminAndLoad()
+  }, [router])
 
   useEffect(() => {
     if (searchTerm) {
@@ -88,8 +92,8 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth')
+  const handleLogout = async () => {
+    await signOutAdminSession()
     router.push('/admin')
   }
 
