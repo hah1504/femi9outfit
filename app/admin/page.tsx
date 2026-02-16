@@ -98,6 +98,12 @@ export default function AdminLoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <div className="mt-4 text-right">
+            <Link href="/account/forgot-password" className="text-sm text-rose-600 hover:text-rose-700">
+              Forgot password?
+            </Link>
+          </div>
         </div>
 
         <div className="mt-6 text-center">
