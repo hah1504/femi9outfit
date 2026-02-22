@@ -124,31 +124,42 @@ export default function AdminCustomersPage() {
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
       <nav className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
                 <LayoutDashboard className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
-                <p className="text-sm text-gray-600">Customer Management</p>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
+                <p className="text-xs md:text-sm text-gray-600">Customer Management</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition text-sm"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Nav */}
+      <div className="lg:hidden bg-white border-b overflow-x-auto">
+        <nav className="px-2 py-2 inline-flex min-w-full gap-2">
+          <Link href="/admin/dashboard" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Dashboard</Link>
+          <Link href="/admin/products" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Products</Link>
+          <Link href="/admin/orders" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Orders</Link>
+          <Link href="/admin/customers" className="px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-sm font-medium whitespace-nowrap">Customers</Link>
+          <Link href="/" target="_blank" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">View Store</Link>
+        </nav>
+      </div>
+
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white min-h-screen shadow-sm">
+        <aside className="hidden lg:block w-64 bg-white min-h-screen shadow-sm">
           <nav className="p-4 space-y-2">
             <Link
               href="/admin/dashboard"
@@ -194,8 +205,8 @@ export default function AdminCustomersPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Customers</h2>
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Customers</h2>
 
           {/* Search */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -212,7 +223,7 @@ export default function AdminCustomersPage() {
           </div>
 
           {/* Customers Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredCustomers.length > 0 ? (
               filteredCustomers.map((customer, index) => (
                 <div key={index} className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition">
@@ -256,7 +267,7 @@ export default function AdminCustomersPage() {
                 </div>
               ))
             ) : (
-              <div className="col-span-2 bg-white rounded-lg shadow-sm p-12 text-center">
+              <div className="md:col-span-2 bg-white rounded-lg shadow-sm p-12 text-center">
                 <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No customers found</h3>
                 <p className="text-gray-600">

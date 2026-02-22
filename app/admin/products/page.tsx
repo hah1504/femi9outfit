@@ -371,31 +371,42 @@ export default function AdminProductsPage() {
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
       <nav className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
                 <LayoutDashboard className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
-                <p className="text-sm text-gray-600">Product Management</p>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
+                <p className="text-xs md:text-sm text-gray-600">Product Management</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition text-sm"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Nav */}
+      <div className="lg:hidden bg-white border-b overflow-x-auto">
+        <nav className="px-2 py-2 inline-flex min-w-full gap-2">
+          <Link href="/admin/dashboard" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Dashboard</Link>
+          <Link href="/admin/products" className="px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-sm font-medium whitespace-nowrap">Products</Link>
+          <Link href="/admin/orders" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Orders</Link>
+          <Link href="/admin/customers" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Customers</Link>
+          <Link href="/" target="_blank" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">View Store</Link>
+        </nav>
+      </div>
+
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white min-h-screen shadow-sm">
+        <aside className="hidden lg:block w-64 bg-white min-h-screen shadow-sm">
           <nav className="p-4 space-y-2">
             <Link
               href="/admin/dashboard"
@@ -441,12 +452,12 @@ export default function AdminProductsPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Products</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">Products</h2>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
+              className="flex items-center gap-2 bg-rose-600 text-white px-4 md:px-6 py-2.5 md:py-3 rounded-lg font-semibold hover:bg-rose-700 transition text-sm md:text-base"
             >
               <Plus className="w-5 h-5" />
               Add Product
@@ -468,7 +479,7 @@ export default function AdminProductsPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
             {filteredProducts.map((product) => (
               <div key={product.id} className="bg-white rounded-lg shadow-sm overflow-hidden group">
                 <div className="relative aspect-[3/4] bg-gray-100">
@@ -554,7 +565,7 @@ export default function AdminProductsPage() {
       {/* Add Product Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-8">
             <h3 className="text-xl font-bold mb-4">Add New Product</h3>
 
             {createError && (
@@ -768,7 +779,7 @@ export default function AdminProductsPage() {
       {/* Edit Product Modal */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-8">
             <h3 className="text-xl font-bold mb-4">Edit Product</h3>
 
             {editError && (

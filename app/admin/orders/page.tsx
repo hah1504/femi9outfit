@@ -171,31 +171,42 @@ export default function AdminOrdersPage() {
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
       <nav className="bg-white shadow-sm border-b">
-        <div className="px-6 py-4">
+        <div className="px-4 md:px-6 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-rose-600 rounded-lg flex items-center justify-center">
                 <LayoutDashboard className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
-                <p className="text-sm text-gray-600">Order Management</p>
+                <h1 className="text-lg md:text-xl font-bold text-gray-900">Femi9outfit Admin</h1>
+                <p className="text-xs md:text-sm text-gray-600">Order Management</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              className="flex items-center gap-2 px-3 md:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition text-sm"
             >
               <LogOut className="w-5 h-5" />
-              <span>Logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
       </nav>
 
+      {/* Mobile Nav */}
+      <div className="lg:hidden bg-white border-b overflow-x-auto">
+        <nav className="px-2 py-2 inline-flex min-w-full gap-2">
+          <Link href="/admin/dashboard" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Dashboard</Link>
+          <Link href="/admin/products" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Products</Link>
+          <Link href="/admin/orders" className="px-3 py-2 bg-rose-50 text-rose-600 rounded-lg text-sm font-medium whitespace-nowrap">Orders</Link>
+          <Link href="/admin/customers" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">Customers</Link>
+          <Link href="/" target="_blank" className="px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm whitespace-nowrap">View Store</Link>
+        </nav>
+      </div>
+
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 bg-white min-h-screen shadow-sm">
+        <aside className="hidden lg:block w-64 bg-white min-h-screen shadow-sm">
           <nav className="p-4 space-y-2">
             <Link
               href="/admin/dashboard"
@@ -241,8 +252,8 @@ export default function AdminOrdersPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Orders</h2>
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Orders</h2>
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
@@ -278,7 +289,7 @@ export default function AdminOrdersPage() {
           {/* Orders Table */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[900px]">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
@@ -340,7 +351,7 @@ export default function AdminOrdersPage() {
       {/* Order Details Modal */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-8">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold">Order Details</h3>
               <button
@@ -353,7 +364,7 @@ export default function AdminOrdersPage() {
 
             <div className="space-y-6">
               {/* Order Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Order ID</p>
                   <p className="font-semibold">#{selectedOrder.id.slice(0, 8)}</p>
@@ -387,7 +398,7 @@ export default function AdminOrdersPage() {
 
               {/* Payment & Amount */}
               <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Payment Method</p>
                     <p className="font-semibold">{selectedOrder.payment_method}</p>
