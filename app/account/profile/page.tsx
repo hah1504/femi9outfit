@@ -6,12 +6,36 @@ import Link from 'next/link'
 import { User, Package, MapPin, Settings, LogOut, Heart } from 'lucide-react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { getCurrentUser, signOut } from '@/lib/supabase/auth'
+import { isCurrentUserAdmin } from '@/lib/supabase/admin'
+import { formatPrice } from '@/lib/utils'
+
+interface AccountOrder {
+  id: string
+  customer_name: string
+  total_amount: number
+  status: string
+  created_at: string
+  customer_email: string | null
+  order_items: Array<{
+    quantity: number
+    price: number
+    size: string | null
+    color: string | null
+    products: {
+      name: string
+      slug: string
+    } | null
+  }>
+}
 
 export default function ProfilePage() {
   const router = useRouter()
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('orders')
+  const [orders, setOrders] = useState<AccountOrder[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -22,9 +46,21 @@ export default function ProfilePage() {
           return
         }
         setUser(currentUser)
+
+        const { isAdmin } = await isCurrentUserAdmin()
+        setIsAdmin(isAdmin)
+
+        if (!isAdmin) {
+          const response = await fetch('/api/account/orders')
+          if (response.ok) {
+            const result = await response.json()
+            setOrders(result.orders || [])
+          }
+        }
       } catch {
         router.push('/account')
       } finally {
+        setOrdersLoading(false)
         setLoading(false)
       }
     }
@@ -47,6 +83,52 @@ export default function ProfilePage() {
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-rose-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center">
+                    <User className="w-8 h-8 text-rose-600" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {user?.user_metadata?.full_name || 'Admin'}
+                    </h1>
+                    <p className="text-gray-600">{user?.email}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Admin Account</h2>
+              <p className="text-gray-600 mb-6">
+                Customer profile sections (orders, wishlist, addresses, settings) are disabled for admin users.
+              </p>
+              <Link
+                href="/admin/dashboard"
+                className="inline-block bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
+              >
+                Go to Admin Dashboard
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -141,21 +223,77 @@ export default function ProfilePage() {
               {activeTab === 'orders' && (
                 <div className="bg-white rounded-lg shadow-sm p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">My Orders</h2>
-                  
-                  {/* Empty State */}
-                  <div className="text-center py-12">
-                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
-                    <p className="text-gray-600 mb-6">
-                      Start shopping to see your orders here
-                    </p>
-                    <Link
-                      href="/products"
-                      className="inline-block bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
-                    >
-                      Start Shopping
-                    </Link>
-                  </div>
+
+                  {ordersLoading ? (
+                    <div className="text-center py-12">
+                      <div className="w-10 h-10 border-4 border-rose-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-600">Loading your orders...</p>
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders yet</h3>
+                      <p className="text-gray-600 mb-6">
+                        Start shopping to see your orders here
+                      </p>
+                      <Link
+                        href="/products"
+                        className="inline-block bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
+                      >
+                        Start Shopping
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {orders.map((order) => (
+                        <div
+                          key={order.id}
+                          className="border border-gray-200 rounded-lg p-4"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                            <div>
+                              <p className="font-semibold text-gray-900">Order #{order.id.slice(0, 8)}</p>
+                              <p className="text-sm text-gray-600">
+                                {new Date(order.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-gray-700">
+                                {formatPrice(Number(order.total_amount))}
+                              </span>
+                              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 capitalize">
+                                {order.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="border-t pt-3">
+                            <p className="text-sm font-semibold text-gray-800 mb-2">Items</p>
+                            <div className="space-y-2">
+                              {order.order_items?.length ? (
+                                order.order_items.map((item, index) => (
+                                  <div key={`${order.id}-${index}`} className="text-sm text-gray-700 flex items-center justify-between gap-4">
+                                    <span>
+                                      {item.products?.name || 'Product'} x{item.quantity}
+                                      {(item.size || item.color) && (
+                                        <span className="text-gray-500">
+                                          {' '}
+                                          ({item.size ? `Size: ${item.size}` : ''}{item.size && item.color ? ', ' : ''}{item.color ? `Color: ${item.color}` : ''})
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="font-medium">{formatPrice(Number(item.price) * Number(item.quantity))}</span>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-gray-500">No items found for this order.</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

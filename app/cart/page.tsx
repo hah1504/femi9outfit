@@ -1,19 +1,61 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react'
 import { useCartStore } from '@/store/cart-store'
 import { formatPrice } from '@/lib/utils'
+import { isCurrentUserAdmin } from '@/lib/supabase/admin'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal } = useCartStore()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [checkingRole, setCheckingRole] = useState(true)
+
+  useEffect(() => {
+    const loadRole = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      setIsAdmin(isAdmin)
+      setCheckingRole(false)
+    }
+
+    loadRole()
+  }, [])
 
   const subtotal = getTotal()
   const freeShippingThreshold = 5999
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : 0 // Always free or based on threshold
   const total = subtotal + shippingCost
+
+  if (checkingRole) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    )
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Shopping Disabled For Admin</h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Admin accounts cannot use cart or checkout.
+            </p>
+            <Link
+              href="/admin/dashboard"
+              className="inline-block bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
+            >
+              Go to Admin Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (items.length === 0) {
     return (

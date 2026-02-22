@@ -14,7 +14,9 @@ import {
   Search,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  Upload,
+  X
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Product } from '@/types/database'
@@ -27,6 +29,42 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isUploadingImages, setIsUploadingImages] = useState(false)
+  const [isUploadingEditImages, setIsUploadingEditImages] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [editUploadedImages, setEditUploadedImages] = useState<string[]>([])
+  const [createError, setCreateError] = useState('')
+  const [editError, setEditError] = useState('')
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    price: '',
+    category_id: 'women',
+    subcategory: '',
+    stock: '0',
+    featured: false,
+    is_active: true,
+    colors: '',
+    sizes: '',
+  })
+  const [editForm, setEditForm] = useState({
+    name: '',
+    slug: '',
+    description: '',
+    price: '',
+    category_id: 'women',
+    subcategory: '',
+    stock: '0',
+    featured: false,
+    is_active: true,
+    colors: '',
+    sizes: '',
+  })
 
   useEffect(() => {
     const checkAdminAndLoad = async () => {
@@ -95,6 +133,227 @@ export default function AdminProductsPage() {
   const handleLogout = async () => {
     await signOutAdminSession()
     router.push('/admin')
+  }
+
+  const parseList = (value: string) =>
+    value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+
+  const uploadFilesToStorage = async (files: FileList | null) => {
+    if (!files || files.length === 0) return []
+
+    const supabase = createClient()
+    const bucket = process.env.NEXT_PUBLIC_SUPABASE_PRODUCT_IMAGES_BUCKET || 'product-images'
+    const uploadedUrls: string[] = []
+
+    for (const file of Array.from(files)) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const safeName = file.name
+        .replace(/\.[^/.]+$/, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/^-|-$/g, '')
+      const path = `products/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type || undefined,
+        })
+
+      if (uploadError) {
+        throw new Error(uploadError.message)
+      }
+
+      const { data } = supabase.storage.from(bucket).getPublicUrl(path)
+      if (data?.publicUrl) {
+        uploadedUrls.push(data.publicUrl)
+      }
+    }
+
+    return uploadedUrls
+  }
+
+  const openEditModal = (product: Product) => {
+    setEditingProductId(product.id)
+    setEditError('')
+    setEditForm({
+      name: product.name || '',
+      slug: product.slug || '',
+      description: product.description || '',
+      price: String(product.price ?? ''),
+      category_id: product.category_id || 'women',
+      subcategory: product.subcategory || '',
+      stock: String(product.stock ?? 0),
+      featured: Boolean(product.featured),
+      is_active: product.is_active !== false,
+      colors: (product.colors || []).join(', '),
+      sizes: (product.sizes || []).join(', '),
+    })
+    setEditUploadedImages([...(product.images || [])])
+    setShowEditModal(true)
+  }
+
+  const handleCreateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreateError('')
+
+    if (uploadedImages.length === 0) {
+      setCreateError('Please upload at least one product image from your device.')
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: createForm.name,
+          slug: createForm.slug || undefined,
+          description: createForm.description || undefined,
+          price: Number(createForm.price),
+          category_id: createForm.category_id,
+          subcategory: createForm.subcategory || undefined,
+          stock: Number(createForm.stock),
+          featured: createForm.featured,
+          is_active: createForm.is_active,
+          images: uploadedImages,
+          colors: parseList(createForm.colors),
+          sizes: parseList(createForm.sizes),
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.product) {
+        throw new Error(result.error || 'Failed to create product')
+      }
+
+      setShowAddModal(false)
+      setCreateForm({
+        name: '',
+        slug: '',
+        description: '',
+        price: '',
+        category_id: 'women',
+        subcategory: '',
+        stock: '0',
+        featured: false,
+        is_active: true,
+        colors: '',
+        sizes: '',
+      })
+      setUploadedImages([])
+      await fetchProducts()
+      alert('Product created successfully!')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create product'
+      setCreateError(message)
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  const handleUploadImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    setCreateError('')
+    setIsUploadingImages(true)
+
+    try {
+      const uploadedUrls = await uploadFilesToStorage(files)
+
+      if (uploadedUrls.length > 0) {
+        setUploadedImages((prev) => [...prev, ...uploadedUrls])
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Image upload failed'
+      setCreateError(`Image upload failed: ${message}`)
+    } finally {
+      setIsUploadingImages(false)
+    }
+  }
+
+  const handleUploadEditImages = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+
+    setEditError('')
+    setIsUploadingEditImages(true)
+
+    try {
+      const uploadedUrls = await uploadFilesToStorage(files)
+      if (uploadedUrls.length > 0) {
+        setEditUploadedImages((prev) => [...prev, ...uploadedUrls])
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Image upload failed'
+      setEditError(`Image upload failed: ${message}`)
+    } finally {
+      setIsUploadingEditImages(false)
+    }
+  }
+
+  const handleUpdateProduct = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setEditError('')
+
+    if (!editingProductId) {
+      setEditError('No product selected for editing.')
+      return
+    }
+
+    if (editUploadedImages.length === 0) {
+      setEditError('Please upload at least one product image from your device.')
+      return
+    }
+
+    setIsUpdating(true)
+
+    try {
+      const response = await fetch(`/api/admin/products/${editingProductId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          slug: editForm.slug || undefined,
+          description: editForm.description || undefined,
+          price: Number(editForm.price),
+          category_id: editForm.category_id,
+          subcategory: editForm.subcategory || undefined,
+          stock: Number(editForm.stock),
+          featured: editForm.featured,
+          is_active: editForm.is_active,
+          images: editUploadedImages,
+          colors: parseList(editForm.colors),
+          sizes: parseList(editForm.sizes),
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.product) {
+        throw new Error(result.error || 'Failed to update product')
+      }
+
+      setShowEditModal(false)
+      setEditingProductId(null)
+      setEditUploadedImages([])
+      await fetchProducts()
+      alert('Product updated successfully!')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update product'
+      setEditError(message)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   if (loading) {
@@ -236,7 +495,7 @@ export default function AdminProductsPage() {
                       <Eye className="w-5 h-5 text-gray-700" />
                     </button>
                     <button
-                      onClick={() => alert('Edit functionality coming soon!')}
+                      onClick={() => openEditModal(product)}
                       className="p-2 bg-white rounded-lg hover:bg-gray-100 transition"
                       title="Edit Product"
                     >
@@ -292,30 +551,435 @@ export default function AdminProductsPage() {
         </main>
       </div>
 
-      {/* Add Product Modal - Coming Soon */}
+      {/* Add Product Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
             <h3 className="text-xl font-bold mb-4">Add New Product</h3>
-            <p className="text-gray-600 mb-6">
-              Product creation form coming soon! For now, you can add products directly in Supabase Table Editor.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Close
-              </button>
-              <a
-                href="https://supabase.com/dashboard/project/kxvtjoeipzsgfonvntxf/editor"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 text-center"
-              >
-                Open Supabase
-              </a>
-            </div>
+
+            {createError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
+                {createError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateProduct} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <input
+                    required
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Product name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug (optional)</label>
+                  <input
+                    value={createForm.slug}
+                    onChange={(e) => setCreateForm({ ...createForm, slug: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="product-slug"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={createForm.price}
+                    onChange={(e) => setCreateForm({ ...createForm, price: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={createForm.stock}
+                    onChange={(e) => setCreateForm({ ...createForm, stock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                  <select
+                    required
+                    value={createForm.category_id}
+                    onChange={(e) => setCreateForm({ ...createForm, category_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="women">Women</option>
+                    <option value="men">Men</option>
+                    <option value="kids">Kids</option>
+                    <option value="party">Party Wear</option>
+                    <option value="bedding">Bedding</option>
+                    <option value="shawls">Shawls</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                  <input
+                    value={createForm.subcategory}
+                    onChange={(e) => setCreateForm({ ...createForm, subcategory: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="marina / velvet / lawn"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                  <div className="mb-2 flex items-center gap-3">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploadingImages ? 'Uploading...' : 'Upload Images'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          handleUploadImages(e.target.files)
+                          e.currentTarget.value = ''
+                        }}
+                        disabled={isUploadingImages}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Select files from your computer. They upload to Supabase Storage.
+                    </p>
+                  </div>
+                  {uploadedImages.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {uploadedImages.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative aspect-square border rounded overflow-hidden bg-gray-50">
+                          <Image
+                            src={url}
+                            alt={`Uploaded ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setUploadedImages((prev) => prev.filter((_, i) => i !== index))
+                            }
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded p-1"
+                            aria-label="Remove image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <span className="absolute left-1 bottom-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
+                            #{index + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 border border-dashed border-gray-300 rounded p-3">
+                      No images uploaded yet.
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Colors (comma-separated)</label>
+                    <input
+                      value={createForm.colors}
+                      onChange={(e) => setCreateForm({ ...createForm, colors: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Black, Blue, Maroon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sizes (comma-separated)</label>
+                    <input
+                      value={createForm.sizes}
+                      onChange={(e) => setCreateForm({ ...createForm, sizes: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="S, M, L, XL"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={createForm.featured}
+                    onChange={(e) => setCreateForm({ ...createForm, featured: e.target.checked })}
+                  />
+                  Featured
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={createForm.is_active}
+                    onChange={(e) => setCreateForm({ ...createForm, is_active: e.target.checked })}
+                  />
+                  Active
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-gray-400"
+                >
+                  {isCreating ? 'Creating...' : 'Create Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 my-8">
+            <h3 className="text-xl font-bold mb-4">Edit Product</h3>
+
+            {editError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleUpdateProduct} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <input
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="Product name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug (optional)</label>
+                  <input
+                    value={editForm.slug}
+                    onChange={(e) => setEditForm({ ...editForm, slug: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="product-slug"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editForm.price}
+                    onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
+                  <input
+                    required
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={editForm.stock}
+                    onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                  <select
+                    required
+                    value={editForm.category_id}
+                    onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="women">Women</option>
+                    <option value="men">Men</option>
+                    <option value="kids">Kids</option>
+                    <option value="party">Party Wear</option>
+                    <option value="bedding">Bedding</option>
+                    <option value="shawls">Shawls</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
+                  <input
+                    value={editForm.subcategory}
+                    onChange={(e) => setEditForm({ ...editForm, subcategory: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    placeholder="marina / velvet / lawn"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Images</label>
+                  <div className="mb-2 flex items-center gap-3">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+                      <Upload className="w-4 h-4" />
+                      <span>{isUploadingEditImages ? 'Uploading...' : 'Upload Images'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          handleUploadEditImages(e.target.files)
+                          e.currentTarget.value = ''
+                        }}
+                        disabled={isUploadingEditImages}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Select files from your computer. They upload to Supabase Storage.
+                    </p>
+                  </div>
+                  {editUploadedImages.length > 0 ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                      {editUploadedImages.map((url, index) => (
+                        <div key={`${url}-${index}`} className="relative aspect-square border rounded overflow-hidden bg-gray-50">
+                          <Image
+                            src={url}
+                            alt={`Uploaded ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditUploadedImages((prev) => prev.filter((_, i) => i !== index))
+                            }
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded p-1"
+                            aria-label="Remove image"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <span className="absolute left-1 bottom-1 bg-black/70 text-white text-[10px] px-1 py-0.5 rounded">
+                            #{index + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 border border-dashed border-gray-300 rounded p-3">
+                      No images uploaded yet.
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Colors (comma-separated)</label>
+                    <input
+                      value={editForm.colors}
+                      onChange={(e) => setEditForm({ ...editForm, colors: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Black, Blue, Maroon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sizes (comma-separated)</label>
+                    <input
+                      value={editForm.sizes}
+                      onChange={(e) => setEditForm({ ...editForm, sizes: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="S, M, L, XL"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={editForm.featured}
+                    onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })}
+                  />
+                  Featured
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={editForm.is_active}
+                    onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                  />
+                  Active
+                </label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingProductId(null)
+                    setEditError('')
+                    setEditUploadedImages([])
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-gray-400"
+                >
+                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

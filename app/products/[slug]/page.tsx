@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { Star, Truck, Shield, Phone, RotateCcw } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { ProductCard } from '@/components/products/product-card'
-import { getProductBySlug, getProducts } from '@/lib/supabase/queries'
+import { getProductBySlug, getProducts } from '@/lib/supabase/queries-server'
 import { AddToCartButton } from '@/components/products/add-to-cart-button'
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {

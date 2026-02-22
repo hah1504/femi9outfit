@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/store/cart-store'
 import { formatPrice } from '@/lib/utils'
-import { createOrder } from '@/lib/supabase/queries'
+import { getCurrentUser } from '@/lib/supabase/auth'
+import { isCurrentUserAdmin } from '@/lib/supabase/admin'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -26,11 +27,34 @@ export default function CheckoutPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isAccountEmail, setIsAccountEmail] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [checkingRole, setCheckingRole] = useState(true)
 
   const subtotal = getTotal()
   const freeShippingThreshold = 5999
   const shippingCost = subtotal >= freeShippingThreshold ? 0 : 0
   const total = subtotal + shippingCost
+
+  useEffect(() => {
+    const loadAccountEmail = async () => {
+      try {
+        const user = await getCurrentUser()
+        if (user?.email) {
+          setFormData((prev) => ({ ...prev, email: user.email || '' }))
+          setIsAccountEmail(true)
+        }
+      } catch {
+        setIsAccountEmail(false)
+      } finally {
+        const { isAdmin } = await isCurrentUserAdmin()
+        setIsAdmin(isAdmin)
+        setCheckingRole(false)
+      }
+    }
+
+    loadAccountEmail()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -61,7 +85,11 @@ export default function CheckoutPage() {
       newErrors.phone = 'Please enter a valid Pakistani phone number'
     }
 
-    // Email validation (optional but if provided, must be valid)
+    if (!isAccountEmail && !formData.email.trim()) {
+      newErrors.email = 'Email is required for order confirmation'
+    }
+
+    // Email validation
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address'
     }
@@ -80,8 +108,12 @@ export default function CheckoutPage() {
     setIsSubmitting(true)
 
     try {
-      // Create order in Supabase
-      const order = await createOrder({
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
         customer_name: `${formData.firstName} ${formData.lastName}`,
         customer_email: formData.email || undefined,
         customer_phone: formData.phone,
@@ -100,7 +132,16 @@ export default function CheckoutPage() {
         total_amount: total,
         payment_method: 'COD',
         status: 'pending',
+        }),
       })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.order) {
+        throw new Error(result.error || 'Failed to place order')
+      }
+
+      const order = result.order
 
       console.log('Order created:', order)
 
@@ -132,6 +173,35 @@ export default function CheckoutPage() {
               className="inline-block bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
             >
               Continue Shopping
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (checkingRole) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    )
+  }
+
+  if (isAdmin) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 py-16">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Checkout Disabled For Admin</h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Admin accounts cannot place customer orders.
+            </p>
+            <Link
+              href="/admin/orders"
+              className="inline-block bg-rose-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-rose-700 transition"
+            >
+              Go to Admin Orders
             </Link>
           </div>
         </div>
@@ -204,17 +274,22 @@ export default function CheckoutPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email (Optional)
+                      Email
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      readOnly={isAccountEmail}
+                      placeholder={isAccountEmail ? 'Using your account email' : 'you@example.com'}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-rose-600 focus:border-transparent ${
                         errors.email ? 'border-rose-500' : 'border-gray-300'
                       }`}
                     />
+                    {isAccountEmail && (
+                      <p className="text-gray-500 text-sm mt-1">Order confirmation will be sent to your registered email.</p>
+                    )}
                     {errors.email && <p className="text-rose-600 text-sm mt-1">{errors.email}</p>}
                   </div>
                 </div>

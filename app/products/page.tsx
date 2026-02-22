@@ -1,5 +1,5 @@
 import { ProductCard } from '@/components/products/product-card'
-import { getProducts } from '@/lib/supabase/queries'
+import { getProducts } from '@/lib/supabase/queries-server'
 import Link from 'next/link'
 
 export default async function ProductsPage({

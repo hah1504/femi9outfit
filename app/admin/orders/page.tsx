@@ -95,17 +95,22 @@ export default function AdminOrdersPage() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId)
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
 
-      if (!error) {
-        alert('Order status updated!')
-        fetchOrders()
-        setSelectedOrder(null)
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update order status')
       }
+
+      alert('Order status updated!')
+      fetchOrders()
+      setSelectedOrder(null)
     } catch (error) {
       console.error('Error updating order:', error)
       alert('Failed to update order status')

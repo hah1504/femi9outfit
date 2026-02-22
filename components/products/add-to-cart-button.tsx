@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Minus, Plus, ShoppingCart, Zap } from 'lucide-react'
 import { useCartStore } from '@/store/cart-store'
 import type { Product } from '@/types/database'
+import { isCurrentUserAdmin } from '@/lib/supabase/admin'
 
 interface AddToCartButtonProps {
   product: Product
@@ -16,10 +17,25 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] || '')
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const addItem = useCartStore((state) => state.addItem)
 
+  useEffect(() => {
+    const loadRole = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      setIsAdmin(isAdmin)
+    }
+
+    loadRole()
+  }, [])
+
   const handleAddToCart = () => {
+    if (isAdmin) {
+      alert('Shopping is disabled for admin accounts.')
+      return
+    }
+
     if (!selectedSize && product.sizes && product.sizes.length > 0) {
       alert('Please select a size')
       return
@@ -40,6 +56,11 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
   }
 
   const handleBuyNow = () => {
+    if (isAdmin) {
+      alert('Shopping is disabled for admin accounts.')
+      return
+    }
+
     if (!selectedSize && product.sizes && product.sizes.length > 0) {
       alert('Please select a size')
       return
@@ -137,9 +158,9 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={isOutOfStock}
+          disabled={isOutOfStock || isAdmin}
           className={`w-full py-4 rounded-lg font-semibold text-lg transition flex items-center justify-center gap-2 ${
-            isOutOfStock
+            isOutOfStock || isAdmin
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : added
               ? 'bg-green-600 text-white'
@@ -147,21 +168,21 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           }`}
         >
           <ShoppingCart className="w-5 h-5" />
-          {isOutOfStock ? 'Out of Stock' : added ? 'Added to Cart!' : 'ADD TO CART'}
+          {isAdmin ? 'Admin Shopping Disabled' : isOutOfStock ? 'Out of Stock' : added ? 'Added to Cart!' : 'ADD TO CART'}
         </button>
 
         {/* Buy It Now Button */}
         <button
           onClick={handleBuyNow}
-          disabled={isOutOfStock}
+          disabled={isOutOfStock || isAdmin}
           className={`w-full py-4 rounded-lg font-semibold text-lg transition flex items-center justify-center gap-2 ${
-            isOutOfStock
+            isOutOfStock || isAdmin
               ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
               : 'bg-gray-900 text-white hover:bg-gray-800'
           }`}
         >
           <Zap className="w-5 h-5" />
-          BUY IT NOW
+          {isAdmin ? 'Admin Shopping Disabled' : 'BUY IT NOW'}
         </button>
       </div>
     </div>

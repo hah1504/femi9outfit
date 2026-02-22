@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ProductCard } from '@/components/products/product-card'
 import { Star } from 'lucide-react'
-import { getFeaturedProducts, getProductsByCategory } from '@/lib/supabase/queries'
+import { getFeaturedProducts, getProductsByCategory } from '@/lib/supabase/queries-server'
 
 // Fetch data from Supabase
 // Fetch data from Supabase

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, Mail, Shield } from 'lucide-react'
@@ -15,6 +15,17 @@ export default function AdminLoginPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const checkExistingAdminSession = async () => {
+      const { isAdmin } = await isCurrentUserAdmin()
+      if (isAdmin) {
+        router.replace('/admin/dashboard')
+      }
+    }
+
+    checkExistingAdminSession()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

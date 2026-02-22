@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
-import { signIn, signUp } from '@/lib/supabase/auth'
+import { getCurrentUser, signIn, signUp } from '@/lib/supabase/auth'
+import { isCurrentUserAdmin } from '@/lib/supabase/admin'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -19,6 +20,22 @@ export default function AccountPage() {
     password: '',
     confirmPassword: '',
   })
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const user = await getCurrentUser()
+        if (user) {
+          const { isAdmin } = await isCurrentUserAdmin()
+          router.replace(isAdmin ? '/admin/dashboard' : '/account/profile')
+        }
+      } catch {
+        // Ignore and stay on login page.
+      }
+    }
+
+    checkSession()
+  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({

@@ -1,15 +1,81 @@
 'use client'
 
 import Link from 'next/link'
-import { ShoppingCart, Search, User, Menu, ChevronDown, Phone } from 'lucide-react'
+import { ShoppingCart, Search, User, Menu, ChevronDown, Phone, LogOut } from 'lucide-react'
 import { useCartStore } from '@/store/cart-store'
-import { useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
+import { signOut } from '@/lib/supabase/auth'
 
 export function Header() {
   const itemCount = useCartStore((state) => state.getItemCount())
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [winterDropdown, setWinterDropdown] = useState(false)
   const [summerDropdown, setSummerDropdown] = useState(false)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const [authUser, setAuthUser] = useState<SupabaseUser | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+
+  useEffect(() => {
+    const supabase = createClient()
+
+    const loadAuthState = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      setAuthUser(user)
+
+      if (!user) {
+        setIsAdmin(false)
+        return
+      }
+
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single()
+
+      setIsAdmin(data?.role === 'admin')
+    }
+
+    loadAuthState()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      loadAuthState()
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    const onClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setAccountMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [])
+
+  const handleLogout = async () => {
+    await signOut()
+    setAccountMenuOpen(false)
+    setAuthUser(null)
+    setIsAdmin(false)
+  }
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
@@ -98,17 +164,65 @@ export function Header() {
             <button className="p-2 hover:text-rose-600 transition">
               <Search className="w-5 h-5" />
             </button>
-            <Link href="/account" className="p-2 hover:text-rose-600 transition">
-              <User className="w-5 h-5" />
-            </Link>
-            <Link href="/cart" className="relative p-2 hover:text-rose-600 transition">
-              <ShoppingCart className="w-5 h-5" />
-              {itemCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
-                  {itemCount}
-                </span>
+            <div className="relative" ref={menuRef}>
+              {authUser ? (
+                <>
+                  <button
+                    onClick={() => setAccountMenuOpen((prev) => !prev)}
+                    className="p-2 hover:text-rose-600 transition"
+                    aria-label="Account menu"
+                  >
+                    <User className="w-5 h-5" />
+                  </button>
+                  {accountMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50">
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900 truncate">{authUser.email}</p>
+                      </div>
+                      {!isAdmin && (
+                        <Link
+                          href="/account/profile"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          My Profile
+                        </Link>
+                      )}
+                      {isAdmin && (
+                        <Link
+                          href="/admin/dashboard"
+                          onClick={() => setAccountMenuOpen(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link href="/account" className="p-2 hover:text-rose-600 transition" aria-label="Account login">
+                  <User className="w-5 h-5" />
+                </Link>
               )}
-            </Link>
+            </div>
+            {!isAdmin && (
+              <Link href="/cart" className="relative p-2 hover:text-rose-600 transition">
+                <ShoppingCart className="w-5 h-5" />
+                {isMounted && itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-medium">
+                    {itemCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
 
