@@ -257,7 +257,7 @@ export default function AdminOrdersPage() {
 
           {/* Filters */}
           <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -286,8 +286,41 @@ export default function AdminOrdersPage() {
             </div>
           </div>
 
+          {/* Mobile Orders Cards */}
+          <div className="md:hidden space-y-3 mb-6">
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map((order) => (
+                <div key={order.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold text-gray-900">#{order.id.slice(0, 8)}</p>
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+                      {getStatusIcon(order.status)}
+                      {order.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">{order.customer_name}</p>
+                  <p className="text-xs text-gray-600 mb-1">{order.customer_phone}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-semibold text-gray-900">Rs.{Number(order.total_amount).toLocaleString()}</p>
+                    <p className="text-xs text-gray-600">{new Date(order.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedOrder(order)}
+                    className="w-full text-sm font-medium bg-rose-50 text-rose-700 py-2 rounded-lg hover:bg-rose-100 transition"
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm p-10 text-center text-gray-500">
+                {searchTerm || filterStatus !== 'all' ? 'No orders found matching your filters' : 'No orders yet'}
+              </div>
+            )}
+          </div>
+
           {/* Orders Table */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px]">
                 <thead className="bg-gray-50">
@@ -423,7 +456,7 @@ export default function AdminOrdersPage() {
               {/* Update Status */}
               <div className="border-t pt-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Update Order Status</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => updateOrderStatus(selectedOrder.id, 'confirmed')}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
