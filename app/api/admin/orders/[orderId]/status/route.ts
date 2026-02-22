@@ -65,9 +65,11 @@ export async function PATCH(
         .eq('order_id', orderId)
 
       const productIds = [...new Set((items || []).map((item) => item.product_id))]
-      const { data: products } = productIds.length
-        ? await supabase.from('products').select('id, name').in('id', productIds)
-        : { data: [], error: null }
+      let products: Array<{ id: string; name: string }> = []
+      if (productIds.length) {
+        const { data } = await supabase.from('products').select('id, name').in('id', productIds)
+        products = data || []
+      }
 
       const productMap = new Map((products || []).map((product) => [product.id, product.name]))
 
