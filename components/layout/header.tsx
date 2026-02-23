@@ -101,7 +101,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-6 text-sm">
+          <nav className="hidden lg:flex items-center space-x-6 text-sm text-black">
             <Link href="/products" className="hover:text-rose-600 transition font-medium">
               Ready to Wear
             </Link>
@@ -156,7 +156,7 @@ export function Header() {
           </nav>
 
           {/* Right Actions */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 text-black">
             <a href="tel:+923333524209" className="hidden md:flex items-center gap-1 text-sm hover:text-rose-600">
               <Phone className="w-4 h-4" />
               <span>+92 333 3524209</span>
@@ -228,7 +228,7 @@ export function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <nav className="lg:hidden py-4 border-t">
+          <nav className="lg:hidden py-4 border-t text-black">
             <Link href="/products" className="block py-2 hover:text-rose-600 font-medium">
               Ready to Wear
             </Link>

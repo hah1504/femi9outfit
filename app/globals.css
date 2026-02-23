@@ -24,3 +24,33 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Force gray utility text to black in navbars and forms for readability */
+nav :is(
+  [class*="text-gray-"],
+  [class*="text-slate-"],
+  [class*="text-zinc-"],
+  [class*="text-neutral-"]
+),
+form :is(
+  [class*="text-gray-"],
+  [class*="text-slate-"],
+  [class*="text-zinc-"],
+  [class*="text-neutral-"]
+) {
+  color: #000 !important;
+}
+
+/* Also make unstyled navbar text/icons black (top header/admin nav links) */
+nav :is(a, button, p, span, svg):not([class*="text-"]) {
+  color: #000 !important;
+}
+
+form :is(input, select, textarea, label) {
+  color: #000 !important;
+}
+
+form :is(input, textarea)::placeholder {
+  color: #000 !important;
+  opacity: 1;
+}

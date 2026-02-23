@@ -564,9 +564,9 @@ export default function AdminProductsPage() {
 
       {/* Add Product Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-8">
-            <h3 className="text-xl font-bold mb-4">Add New Product</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center p-3 md:p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-2 md:my-8 max-h-[calc(100vh-1.5rem)] md:max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <h3 className="text-xl font-bold text-black mb-4">Add New Product</h3>
 
             {createError && (
               <div className="mb-4 bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
@@ -778,8 +778,8 @@ export default function AdminProductsPage() {
 
       {/* Edit Product Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-8">
+        <div className="fixed inset-0 bg-black/50 flex items-start md:items-center justify-center p-3 md:p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 my-2 md:my-8 max-h-[calc(100vh-1.5rem)] md:max-h-[calc(100vh-4rem)] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">Edit Product</h3>
 
             {editError && (
